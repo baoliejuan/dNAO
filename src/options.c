@@ -446,6 +446,8 @@ static struct Comp_Opt
 	{ "scroll_amount", "amount to scroll map when scroll_margin is reached",
 						20, DISP_IN_GAME }, /*WC*/
 	{ "scroll_margin", "scroll map when this far from the edge", 20, DISP_IN_GAME }, /*WC*/
+	{ "species",    "your starting species (e.g., poplar, blue)",
+						PL_CSIZ, DISP_IN_GAME },
 #ifdef SORTLOOT
 	{ "sortloot", "sort object selection lists by description", 4, SET_IN_GAME },
 #endif
@@ -675,6 +677,7 @@ initoptions()
 	flags.descendant = -1;
 	flags.initgend = -1;
 	flags.initalign = -1;
+	flags.initspecies = -1;
 
 
 	/* Set the default monster and object class symbols.  Don't use */
@@ -3025,6 +3028,15 @@ goodfruit:
 	    }
 	    return;
 	}
+	
+	fullname = "species";
+	if (match_optname(opts, fullname, sizeof("species")-1, TRUE)) {
+		if (negated) bad_negation(fullname, FALSE);
+		else if ((op = string_for_env_opt(fullname, opts, FALSE)) != 0)
+			if ((flags.initspecies = str2species(op)) == ROLE_NONE)
+				badoption(opts);
+		return;
+	}
 
         fullname = "statuscolor";
         if (match_optname(opts, fullname, 11, TRUE)) {
@@ -4759,6 +4771,8 @@ char *buf;
 		if (iflags.wc_scroll_margin) Sprintf(buf, "%d",iflags.wc_scroll_margin);
 		else Strcpy(buf, defopt);
 	}
+	else if (!strcmp(optname,"species"))
+		Sprintf(buf, "%s", rolestring(flags.initspecies, species, name));
 #ifdef SORTLOOT
 	else if (!strcmp(optname, "sortloot")) {
 		char *sortname = (char *)NULL;

@@ -1221,6 +1221,22 @@ const struct Align aligns[] = {
 	{"void",	"non-aligned",	"Non",	0,		A_VOID}
 };
 
+
+
+const struct Species species[] = {
+	{"none", 0, NONE_SPECIES},
+	{"white", AD_COLD, DRAGON_SPECIES},
+	{"red", AD_FIRE, DRAGON_SPECIES},
+	{"orange", AD_SLEE, DRAGON_SPECIES},
+	{"blue", AD_ELEC, DRAGON_SPECIES},
+	{"green", AD_DRST, DRAGON_SPECIES},
+	{"yellow", AD_ACID, DRAGON_SPECIES},
+	{"gray", AD_MAGM, DRAGON_SPECIES},
+	{"shimmering", AD_RBRE, DRAGON_SPECIES},
+	{"black", AD_DISN, DRAGON_SPECIES}
+};
+
+
 STATIC_DCL char * FDECL(promptsep, (char *, int));
 STATIC_DCL int FDECL(role_gendercount, (int));
 STATIC_DCL int FDECL(race_alignmentcount, (int));
@@ -1517,6 +1533,88 @@ str2align(str)
 	return ROLE_NONE;
 }
 
+boolean
+validspecies(rolenum, racenum, gendnum, speciesnum)
+	int rolenum, racenum, gendnum, speciesnum;
+{
+	if (speciesnum < 0 || speciesnum >= ROLE_SPECIES)
+		return FALSE; 
+	if(races[racenum].malenum == PM_HALF_DRAGON){
+		if(species[speciesnum].type != DRAGON_SPECIES)
+			return FALSE;	
+		int breath_type = species[speciesnum].value;
+		if(roles[rolenum].malenum == PM_NOBLEMAN){
+			if(genders[gendnum].allow == ROLE_FEMALE) 
+				return breath_type == AD_MAGM || breath_type == AD_COLD;
+		}
+		if(roles[rolenum].malenum == PM_MADMAN){
+			if(genders[gendnum].allow == ROLE_FEMALE)
+				return breath_type == AD_RBRE;
+			else
+				return breath_type == AD_FIRE;
+		}
+		if(roles[rolenum].malenum == PM_ANACHRONONAUT){
+			return breath_type == AD_DISN;
+		}
+		return breath_type == AD_COLD ||
+			breath_type == AD_FIRE ||
+			breath_type == AD_SLEE ||
+			breath_type == AD_ELEC ||
+			breath_type == AD_DRST ||
+			breath_type == AD_ACID;
+	}
+	return FALSE;
+
+}
+
+
+int
+randspecies(rolenum, racenum, gendnum)
+	int rolenum, racenum, gendnum;
+{
+	int i, n = 0;
+
+	/* Count the number of valid species */
+	for (i = 0; i < ROLE_SPECIES; i++){
+		n += validspecies(rolenum, racenum, gendnum, i);
+	}
+	/* Pick a random species */
+	if (n) n = rn2(n);
+	for (i = 0; i < ROLE_SPECIES; i++){
+		if(!validspecies(rolenum,racenum,gendnum,i)) continue;
+	    	if (n) n--;
+	    	else return (i);
+	}
+	/* This role/race has no permitted species so use the none option */
+	return 0;
+}
+
+
+int
+str2species(str)
+	char *str;
+{
+	int i, len;
+
+	/* Is str valid? */
+	if (!str || !str[0])
+	    return ROLE_NONE;
+
+	/* Match as much of str as is provided */
+	len = strlen(str);
+	for (i = 0; i < ROLE_SPECIES; i++) {
+	    /* Does it match the adjective? */
+	    if (!strncmpi(str, species[i].name, len))
+		return i;
+	}
+	if ((len == 1 && (*str == '*' || *str == '@')) ||
+		!strncmpi(str, randomstr, len))
+	    return ROLE_RANDOM;
+
+	/* Couldn't find anything appropriate */
+	return ROLE_NONE;
+}
+
 /* is rolenum compatible with any racenum/gendnum/alignnum constraints? */
 boolean
 ok_role(rolenum, racenum, gendnum, alignnum)
@@ -1792,6 +1890,31 @@ int rolenum, racenum, gendnum, pickhow;
 		return i;
 	    else
 		aligns_ok--;
+	}
+    }
+    return ROLE_NONE;
+}
+
+int
+pick_species(rolenum, racenum, gendnum, pickhow)
+int rolenum, racenum, gendnum, pickhow;
+{
+    int i;
+    int species_ok = 0;
+
+    for (i = 0; i < ROLE_ALIGNS; i++) {
+	if (validspecies(rolenum, racenum, gendnum, i))
+	    species_ok++;
+    }
+    if (species_ok == 0 || (species_ok > 1 && pickhow == PICK_RIGID))
+	return ROLE_NONE;
+    species_ok = rn2(species_ok);
+    for (i = 0; i < ROLE_SPECIES; i++) {
+	if (validspecies(rolenum, racenum, gendnum, i)) {
+	    if (species_ok == 0)
+		return i;
+	    else
+		species_ok--;
 	}
     }
     return ROLE_NONE;

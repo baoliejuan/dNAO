@@ -307,6 +307,17 @@ struct Align {
 
 extern const struct Align aligns[];	/* table of available alignments */
 
+struct Species {
+	const char *name;
+	int value;
+	int type;
+};
+
+extern const struct Species species[];	/* table of available species */
+
+#define ROLE_SPECIES	32	/* number of permitted player species */
+#define NONE_SPECIES 0
+#define DRAGON_SPECIES 1
 
 enum {
     PWR_ABDUCTION = 0,

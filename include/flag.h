@@ -216,6 +216,7 @@ struct flag {
 #define INITALIGN_EVIL		3
 #define INITALIGN_VOID		4
 	int	 descendant;	/* start as descendant */
+	int	 initspecies;	/* starting species (index into species[])  */
 	int	 chaosvar;	/* Set chaos variant */
 	int	 randomall;	/* randomly assign everything not specified */
 	int	 pantheon;	/* deity selection for priest character */

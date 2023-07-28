@@ -629,7 +629,7 @@ curses_choose_character()
         if (n > 1)
             sel =
                 curses_character_dialog(choices,
-                                        "Choose one of the following roles:");
+                                        "Choose one of the following roles:", FALSE);
         else
             sel = 0;
         if (sel >= 0)
@@ -690,7 +690,7 @@ curses_choose_character()
             if (n > 1)
                 sel =
                     curses_character_dialog(choices,
-                                            "Choose one of the following races:");
+                                            "Choose one of the following races:", FALSE);
             else
                 sel = 0;
             if (sel >= 0)
@@ -749,7 +749,7 @@ curses_choose_character()
             if (n > 1)
                 sel =
                     curses_character_dialog(choices,
-                                            "Choose one of the following genders:");
+                                            "Choose one of the following genders:", FALSE);
             else
                 sel = 0;
             if (sel >= 0)
@@ -808,7 +808,7 @@ curses_choose_character()
             if (n > 1)
                 sel =
                     curses_character_dialog(choices,
-                                            "Choose one of the following alignments:");
+                                            "Choose one of the following alignments:", FALSE);
             else
                 sel = 0;
             if (sel >= 0)
@@ -830,7 +830,60 @@ curses_choose_character()
         }
     }
 
-    /* Select descendant status, if necessary */
+    /* Select a species, if necessary */
+    /* force compatibility with role/race/gender */
+    if (flags.initspecies < 0 ||
+        !validspecies(flags.initrole, flags.initrace, flags.initgend, flags.initspecies)) {
+        if (flags.initspecies == ROLE_RANDOM || flags.randomall){
+            flags.initspecies = pick_species(flags.initrole, flags.initrace,
+                                         flags.initgend, PICK_RANDOM);
+            if (flags.initspecies < 0)
+                flags.initspecies = randspecies(flags.initrole, flags.initrace, flags.initgend);
+        } else {
+            /* Count the number of valid species */
+            n = 0;              /* number valid */
+            for (i = 0; i < ROLE_SPECIES; i++) {
+                if (validspecies(flags.initrole, flags.initrace, flags.initgend, i))
+                    n++;
+            }
+
+            choices = (const char **) alloc(sizeof (char *) * (n + 1));
+            pickmap = (int *) alloc(sizeof (int) * (n + 1));
+            for (n = 0, i = 0; i < ROLE_SPECIES; i++) {
+                if (validspecies(flags.initrole, flags.initrace, flags.initgend, i)) {
+                    choices[n] = species[i].name;
+                    pickmap[n++] = i;
+                }
+            }
+            choices[n] = (const char *) 0;
+	    pickmap[n] = 0;
+            /* Permit the user to pick, if there is more than one */
+            if (n > 1)
+                sel =
+                    curses_character_dialog(choices,
+                                            "Choose one of the following species:", TRUE);
+            else
+                sel = 0;
+            if (sel >= 0)
+                sel = pickmap[sel];
+            else if (sel == ROLE_NONE) {        /* Quit */
+                clearlocks();
+                curses_bail(0);
+            }
+            flags.initspecies = sel;
+            free(choices);
+            free(pickmap);
+        }
+        if (flags.initspecies == ROLE_RANDOM) {
+            sel = pick_species(flags.initrole, flags.initrace,
+                             flags.initgend, PICK_RANDOM);
+            if (sel < 0)
+                sel = randspecies(flags.initrole, flags.initrace, flags.initgend);
+            flags.initspecies = sel;
+        }
+    }
+
+	/* Select descendant status, if necessary */
     if (flags.descendant < 0){
         if (flags.descendant == ROLE_RANDOM || flags.randomall || flags.initrole < 0 || !validdescendant(flags.initrole)) {
            flags.descendant = 0; // never randomly roll descendant
@@ -847,7 +900,7 @@ curses_choose_character()
             }
             choices[i] = (const char *) 0;
 
-            sel = curses_character_dialog(choices, "Choose one of the following inheritances:");
+            sel = curses_character_dialog(choices, "Choose one of the following inheritances:", FALSE);
             if (sel >= 0) sel = pickmap[sel];
             else if (sel == ROLE_NONE) {        /* Quit */
                 clearlocks();
@@ -870,7 +923,7 @@ curses_choose_character()
 /* Prompt user for character race, role, alignment, or gender */
 
 int
-curses_character_dialog(const char **choices, const char *prompt)
+curses_character_dialog(const char **choices, const char *prompt, boolean inorder)
 {
     int count, count2, ret, curletter;
     char used_letters[52];
@@ -883,11 +936,13 @@ curses_character_dialog(const char **choices, const char *prompt)
 
     for (count = 0; choices[count]; count++) {
         curletter = tolower(choices[count][0]);
-        for (count2 = 0; count2 < count; count2++) {
-            if (curletter == used_letters[count2]) {
-                curletter = toupper(curletter);
-            }
-        }
+	if(!inorder){
+		for (count2 = 0; count2 < count; count2++) {
+		    if (curletter == used_letters[count2]) {
+			curletter = toupper(curletter);
+		    }
+		}
+	} else curletter = 'a' + count;
 
         identifier.a_int = (count + 1); /* Must be non-zero */
         curses_add_menu(wid, NO_GLYPH, &identifier, curletter, 0,

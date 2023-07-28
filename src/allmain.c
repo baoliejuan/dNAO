@@ -4444,6 +4444,7 @@ welcome(new_game)
 boolean new_game;	/* false => restoring an old game */
 {
     char buf[BUFSZ];
+    char racebuf[BUFSZ];
     boolean currentgend = Upolyd ? u.mfemale : flags.female;
 
     /*
@@ -4455,6 +4456,7 @@ boolean new_game;	/* false => restoring an old game */
      * restores it's only shown if different from its original value.
      */
     *buf = '\0';
+    *racebuf = '\0';
     if (new_game || galign(u.ugodbase[UGOD_ORIGINAL]) != galign(u.ugodbase[UGOD_CURRENT]))
 	Sprintf(eos(buf), " %s", align_str(galign(u.ugodbase[UGOD_CURRENT])));
     if (!urole.name.f &&
@@ -4462,9 +4464,15 @@ boolean new_game;	/* false => restoring an old game */
 	     currentgend != flags.initgend))
 	Sprintf(eos(buf), " %s", genders[currentgend].adj);
 
+    if (Race_if(PM_HALF_DRAGON)){
+	Sprintf(eos(racebuf), "%s %s", species[flags.initspecies].name, urace.adj);
+    } else {
+	Sprintf(eos(racebuf), "%s", urace.adj);
+    }
+
     pline(new_game ? "%s %s, welcome to dNetHack!  You are a%s %s%s %s."
-		   : "%s %s, the%s %s%s %s, welcome back to dNetHack!",
-	  Hello((struct monst *) 0), plname, buf, urace.adj, (flags.descendant) ? " descendant" : "",
+		   : "%s %s, the%s %s %s, welcome back to dNetHack!",
+	  Hello((struct monst *) 0), plname, buf, racebuf, (flags.descendant) ? " descendant" : "",
 	  (currentgend && urole.name.f) ? urole.name.f : urole.name.m);
 	if(iflags.dnethack_start_text){
 		pline("Press Ctrl^W or type #ward to engrave a warding sign.");
