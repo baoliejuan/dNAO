@@ -2074,7 +2074,7 @@ struct obj	*sobj;
 		}
 		s = sobj->cursed ? -1 :
 		    otmp->spe >= 9 ? (rn2(otmp->spe) == 0) :
-		    sobj->blessed ? rnd(3-otmp->spe/3) : 1;
+		    sobj->blessed ? (3-otmp->spe/3) : 1;
 		if (s >= 0 && otmp->otyp >= GRAY_DRAGON_SCALES &&
 					otmp->otyp <= YELLOW_DRAGON_SCALES) {
 			
@@ -2384,7 +2384,7 @@ struct obj	*sobj;
 				       sobj->cursed ? -1 :
 				       !uwep ? 1 :
 				       uwep->spe >= 10 ? (rn2(uwep->spe) == 0) :
-				       sobj->blessed ? rnd(3-uwep->spe/3) : 1);
+				       sobj->blessed ? (3-uwep->spe/3) : 1);
 		break;
 	case SCR_TAMING:
 	case SPE_PACIFY_MONSTER:
