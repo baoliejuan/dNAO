@@ -6281,6 +6281,9 @@ typfnd:
 		aname = artifact_name(name, &objtyp, NULL);
 
 		if (aname) {
+			if (!strcmp((&artilist[ART_SKY_REFLECTED])->name, aname))
+				set_material_gm(otmp, MERCURIAL);
+
 			/* attempt to create an artifact with the modified name */
 			otmp = oname(otmp, aname);
 
